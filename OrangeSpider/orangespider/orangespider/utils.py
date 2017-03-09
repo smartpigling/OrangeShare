@@ -12,13 +12,13 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from settings import IMAGES_STORE
-from models import ArticleRule
+from models import ArticleRule, BookRule
 from models import db_connect, create_news_table
 from sqlalchemy.orm import sessionmaker
 
 
 def filter_tags(htmlstr):
-    """更深层次的过滤，类似instapaper或者readitlater这种服务，很有意思的研究课题
+    """
     过滤HTML中的标签
     将HTML中标签等信息去掉
     @param htmlstr HTML字符串.
@@ -50,10 +50,9 @@ def filter_tags(htmlstr):
 
 def replace_charentity(htmlstr):
     """
-    ##替换常用HTML字符实体.
-    #使用正常的字符替换HTML中特殊的字符实体.
-    #你可以添加新的实体字符到CHAR_ENTITIES中,处理更多HTML字符实体.
-    #@param htmlstr HTML字符串.
+    替换常用HTML字符实体.
+    使用正常的字符替换HTML中特殊的字符实体.
+    @param htmlstr HTML字符串.
     """
     char_entities = {'nbsp': ' ', '160': ' ',
                      'lt': '<', '60': '<',
@@ -76,7 +75,7 @@ def replace_charentity(htmlstr):
     return htmlstr
 
 
-pat1 = re.compile(r'<div class="hzh_botleft">(?:.|\n)*?</div>')
+pat1 = re.compile(r'<div class=".*">(?:.|\n)*?</div>')
 pat2 = re.compile(r'<script (?:.|\n)*?</script>')
 pat3 = re.compile(r'<a href="javascript:"(?:.|\n)*?</a>')
 
@@ -104,9 +103,9 @@ def ltos(lst):
 def send_mail(jokes):
     """发送电子邮件"""
     sender = '501953807@qq.com'
-    receiver = ['xiadan@winhong.com', '501953807@qq.com']
+    receiver = ['501953807@qq.com']
     subject = '每日笑话'
-    smtpserver = 'smtp.263.net'
+    smtpserver = 'smtp.qq.com'
     username = '501953807@qq.com'
     password = '******'
     msg_root = MIMEMultipart('related')
@@ -162,34 +161,42 @@ def init_rule():
     create_news_table(engine)
     Session = sessionmaker(bind=engine)
     with session_scope(Session) as session:
-        artile_rule1 = ArticleRule(
+        artile_rule = ArticleRule(
             name='huxiu',
             allow_domains='huxiu.com',
-            start_urls='http://www.huxiu.com/',
+            start_urls='https://www.huxiu.com/',
             next_page='',
-            allow_url='/article/\d+/\d+\.html',
+            allow_url='/article.*/\d+\.html',
             extract_from='//div[@class="mod-info-flow"]',
             title_xpath='//div[@class="article-wrap"]/h1/text()',
-            body_xpath='//div[@id="article_content"]/p//text()',
+            body_xpath='//div[@class="article-content-wrap"]/p//text()',
             publish_time_xpath='//span[@class="article-time"]/text()',
             source_site='虎嗅网',
             enable=1
         )
-        artile_rule2 = ArticleRule(
-            name='osc',
-            allow_domains='oschina.net',
-            start_urls='http://www.oschina.net/',
-            next_page='',
-            allow_url='/news/\d+/',
-            extract_from='//div[@id="IndustryNews"]',
-            title_xpath='//h1[@class="OSCTitle"]/text()',
-            publish_time_xpath='//div[@class="PubDate"]/text()',
-            body_xpath='//div[starts-with(@class, "Body")]/p[position()>1]//text()',
-            source_site='开源中国',
+        book_rule = BookRule(
+            name='readnovel',
+            allow_domains='readnovel.com',
+            start_urls='https://www.readnovel.com/',
+            next_page='//div[starts-with(@class,"chapter-control")]/a[@id="j_chapterNext"]',
+            allow_book_url='.*/book/\d+',
+            extract_book_from='//div[@class="book-rank-list"]',
+            book_title_xpath='//div[@class="book-info"]/h1/em/text()',
+            book_intro_xpath='//div[@class="book-info"]/p[@class="intro"]/text()',
+            book_author_xpath='//div[@class="book-info"]/p[@class="author"]/a/text()',
+            book_category_xpath='//div[@class="book-info"]/h1/i/text()',
+
+            allow_chapter_url='.*/chapter/\d+/\d+',
+            extract_chapter_from='//div[@class="book-info"]',
+            chapter_title_xpath='//h3[@class="j_chapterName"]/text()',
+            chapter_body_xpath='//div[starts-with(@class,"read-content")]',
+            publish_time_xpath='//span[@class="j_updateTime"]/text()',
+
+            source_site='小说阅读网',
             enable=1
         )
-        session.add(artile_rule1)
-        session.add(artile_rule2)
+        session.add(artile_rule)
+        session.add(book_rule)
 
 
 def parse_text(extract_texts, rule_name, attr_name):
@@ -198,7 +205,6 @@ def parse_text(extract_texts, rule_name, attr_name):
     @param rule_name: 规则名称
     @param attr_name: 属性名
     """
-
     custom_func = "%s_%s" % (rule_name, attr_name)
     if custom_func in globals():
         return globals()[custom_func](extract_texts)

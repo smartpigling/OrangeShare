@@ -8,7 +8,7 @@
 import scrapy
 
 
-class Article(scrapy.Item):
+class ArticleItem(scrapy.Item):
     title = scrapy.Field()
     url = scrapy.Field()
     body = scrapy.Field()
@@ -17,17 +17,19 @@ class Article(scrapy.Item):
 
 
 class BookItem(scrapy.Item):
-    title = scrapy.Field()  # 标题
-    link = scrapy.Field()  # 链接
-    intro = scrapy.Field()  # 简介
-    author = scrapy.Field()  # 作者
-    originate = scrapy.Field()  # 来源
-    created_time = scrapy.Field()  # 创建时间
-    category = scrapy.Field()  # 分类
+    id = scrapy.Field()
+    url = scrapy.Field()
+    title = scrapy.Field()
+    intro = scrapy.Field()
+    author = scrapy.Field()
+    publish_time = scrapy.Field()
+    source_site = scrapy.Field()
+    category = scrapy.Field()
 
 
 class BookChapterItem(scrapy.Item):
-    book_id = scrapy.Field()
-    headline = scrapy.Field()  # 章节标题
-    content = scrapy.Field()  # 章节内容
-    updated_time = scrapy.Field()  # 更新时间
+    book = scrapy.Field()
+    url = scrapy.Field()
+    title = scrapy.Field()
+    body = scrapy.Field()
+    publish_time = scrapy.Field()

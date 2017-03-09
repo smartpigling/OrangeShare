@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 """
-Topic: 文章爬取
+Topic: forum爬取
 Desc :
 """
 import logging
@@ -10,8 +10,8 @@ from orangespider.utils import parse_text
 from orangespider.items import ArticleItem
 
 
-class ArticleSpider(CrawlSpider):
-    name = 'article'
+class ForumSpider(CrawlSpider):
+    name = 'forum'
 
     custom_settings = {
         'ITEM_PIPELINES': {'orangespider.pipelines.ArticlePipeline': 5}

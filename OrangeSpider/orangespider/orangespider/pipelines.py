@@ -8,7 +8,9 @@
 import pymongo
 from contextlib import contextmanager
 from sqlalchemy.orm import sessionmaker
-from orangespider.models import db_connect, create_news_table, Article
+from orangespider.models import db_connect, create_news_table
+from orangespider.models import Article, Book, BookChapter
+from orangespider.items import ArticleItem, BookItem, BookChapterItem
 
 
 @contextmanager
@@ -25,7 +27,7 @@ def session_scope(Session):
         session.close()
 
 
-class ArticleDataBasePipeline(object):
+class ArticlePipeline(object):
     """保存文章到数据库"""
 
     def __init__(self):
@@ -38,55 +40,46 @@ class ArticleDataBasePipeline(object):
         pass
 
     def process_item(self, item, spider):
-        a = Article(url=item["url"],
-                    title=item["title"].encode("utf-8"),
-                    publish_time=item["publish_time"].encode("utf-8"),
-                    body=item["body"].encode("utf-8"),
-                    source_site=item["source_site"].encode("utf-8"))
-        with session_scope(self.Session) as session:
-            session.add(a)
+        if isinstance(item, ArticleItem):
+            a = Article(url=item['url'],
+                        title=item['title'].encode('utf-8'),
+                        publish_time=item['publish_time'].encode('utf-8'),
+                        body=item['body'].encode('utf-8'),
+                        source_site=item['source_site'].encode('utf-8'))
+            with session_scope(self.Session) as session:
+                session.add(a)
 
     def close_spider(self, spider):
         pass
 
 
 class BookPipeline(object):
+    """保存书籍到数据库"""
 
-    collection_book = 'crawl.book'
-
-    collection_book_chapter = 'crawl.book_chapter'
-
-    def __init__(self, mongo_uri, mongo_db):
-        self.mongo_uri = mongo_uri
-        self.mongo_db = mongo_db
-
-    @classmethod
-    def from_crawler(cls, crawler):
-        return cls(
-            mongo_uri=crawler.settings.get('MONGO_URI'),
-            mongo_db=crawler.settings.get('MONGO_DATABASE', 'crawl')
-        )
+    def __init__(self):
+        engine = db_connect()
+        create_news_table(engine)
+        self.Session = sessionmaker(bind=engine)
 
     def open_spider(self, spider):
-        self.client = pymongo.MongoClient(self.mongo_uri)
-        self.db = self.client[self.mongo_db]
+        """This method is called when the spider is opened."""
+        pass
 
     def close_spider(self, spider):
-        self.client.close()
+        pass
 
     def process_item(self, item, spider):
-        book = item.get('book', None)
-        chapter = item.get('chapter', None)
-        _book = self.db[self.collection_book].find_one(dict(book))
-        if _book:
-            if not self.db[self.collection_book_chapter].find_one({'headline': chapter['headline']}):
-                chapter['book_id'] = _book['_id']
-                _chapter_id = self.db[self.collection_book_chapter].insert(
-                    dict(chapter))
-                self.db[self.collection_book].update(_book, {'$push': {'chapters':
-                                                                       {'chapter_id': _chapter_id,
-                                                                           'headline': chapter['headline']}
-                                                                       }})
-        else:
-            self.db[self.collection_book].insert(dict(book))
+        if isinstance(item, BookItem):
+            b = Book(url=item['url'],
+                     title=item['title'].encode('utf-8'),
+                     intro=item['intro'].encode('utf-8'),
+                     author=item['author'].encode('utf-8'))
+            with session_scope(self.Session) as session:
+                session.add(b)
+        elif isinstance(item, BookChapterItem):
+            bc = BookChapter(
+                title=item['title'].encode('utf-8'),
+                body=item['body'].encode('utf-8'))
+            with session_scope(self.Session) as session:
+                session.add(bc)
         return item

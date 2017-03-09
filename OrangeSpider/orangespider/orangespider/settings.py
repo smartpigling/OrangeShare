@@ -69,7 +69,8 @@ ROBOTSTXT_OBEY = True
 # See http://scrapy.readthedocs.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
     # 'orangespider.pipelines.BookPipeline': 300,
-    'orangespider.pipelines.ArticleDataBasePipeline': 5,
+    'orangespider.pipelines.BookPipeline': 3,
+    'orangespider.pipelines.ArticlePipeline': 5,
 }
 
 # MONGO_URI = '127.0.0.1:27017'
@@ -107,7 +108,8 @@ IMAGES_EXPIRES = 30  # 30天内抓取的都不会被重抓
 #HTTPCACHE_IGNORE_HTTP_CODES = []
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 
-LOG_LEVEL = logging.INFO
-LOG_STDOUT = True
-LOG_FILE = os.path.join(BASE_DIR, '/log/spider.log')
-LOG_FORMAT = "%(asctime)s [%(name)s] %(levelname)s: %(message)s"
+# LOG_LEVEL = logging.INFO
+# LOG_ENABLED = True
+# LOG_STDOUT = True
+# LOG_FILE = os.path.join(BASE_DIR, 'spider.log')
+# LOG_FORMAT = "%(asctime)s [%(name)s] %(levelname)s: %(message)s"
